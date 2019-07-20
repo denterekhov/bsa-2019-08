@@ -1,13 +1,9 @@
 import CartParser from './CartParser';
-import fs from 'fs';
-// import { readFileSync } from 'fs';
-const { readFileSync } = jest.requireActual('fs');
-
 const uuidv4 = require('uuid/v4');
 const path = require('path');
 
 jest.mock('uuid/v4');
-jest.mock('fs');
+const mockedId = uuidv4();
 
 let parser;
 
@@ -28,7 +24,7 @@ describe('CartParser - unit tests', () => {
       `;
 
       const expectedError = {
-        type:    'header',
+        type:    `${parser.ErrorType.HEADER}`,
         row:     0,
         column:  0,
         message: `Expected header to be named "${parser.schema.columns[0].name}" but received Not a product name.`,
@@ -199,7 +195,6 @@ describe('CartParser - unit tests', () => {
     });
     it('should parse row correctly when data with right shape passed to function', () => {
       const csvLine = `Mollis consequat,9.00,2.5`;
-      const mockedId = uuidv4();
 
       const expectedResult = {
         id:       mockedId,
@@ -223,9 +218,10 @@ describe('CartParser - unit tests', () => {
         Consectetur adipiscing,28.72,10
         Condimentum aliquet,13.90,1`;
 
-      fs.readFileSync.mockReturnValueOnce(contents);
+      parser.readFile = jest.fn(() => contents);
+      console.error = jest.fn();
 
-      expect(() => parser.parse()).toThrow('Validation failed!');
+      expect(() => parser.parse()).toThrow();
     });
   });
 });
@@ -233,7 +229,6 @@ describe('CartParser - unit tests', () => {
 describe('CartParser - integration test', () => {
   it('should return correct JSON object', () => {
     const result = parser.parse(path.resolve(__dirname, '../samples/cart.csv'));
-    const mockedId = uuidv4();
     const expectedResult = {
       "items": [
         {
